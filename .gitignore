@@ -1,0 +1,17 @@
+# Virtual Environment
+.venv/
+
+# Python Cache
+__pycache__/
+*.py[cod]
+
+# Data and Databases
+# Excluding large database and CSV files
+data/*.db
+data/CSVs/*.csv
+
+# Logs
+logs/
+
+# Jupyter Notebook Checkpoints
+.ipynb_checkpoints/
