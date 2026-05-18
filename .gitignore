@@ -1,9 +1,13 @@
 # Virtual Environment
 .venv/
+env/
+venv/
+ENV/
 
 # Python Cache
 __pycache__/
 *.py[cod]
+*$py.class
 
 # Data and Databases
 # Excluding large database and CSV files
@@ -12,8 +16,22 @@ data/CSVs/*.csv
 
 # Logs
 logs/
+*.log
 
 # Jupyter Notebook Checkpoints
 .ipynb_checkpoints/
 
+# IDE Settings
+.idea/
+.vscode/
 
+# OS Files
+.DS_Store
+Thumbs.db
+
+# NOTE: The 'models/' directory is EXPLICITLY ALLOWED to be tracked 
+# so that pre-trained models can be deployed via GitHub.
+!models/
+!models/*.pkl
+!Freight_Cost_Prediction/models/
+!Freight_Cost_Prediction/models/*.pkl
