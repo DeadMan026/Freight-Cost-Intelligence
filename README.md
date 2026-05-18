@@ -1,65 +1,54 @@
-# Enterprise Freight Intelligence & Risk Mitigation System
+# Invoice Intelligence: Freight Analytics & Risk Mitigation System
 
-## Executive Summary
-This repository contains a modular machine learning pipeline designed to optimize logistics financial operations. By transitioning from disparate, flat-file data structures to a centralized relational database architecture, the system provides a robust foundation for freight cost prediction, risk assessment, and long-term financial visibility.
+## Project Overview
+This repository hosts a sophisticated Machine Learning and Data Engineering pipeline designed to optimize logistics financial operations. The system transforms raw supply chain data into actionable financial intelligence through automated freight cost prediction and intelligent invoice risk assessment.
 
-## Problem Statement
-Modern logistics operations are often hindered by:
-*   **Data Fragmentation**: Critical invoice information is frequently stored in isolated CSV files, leading to data inconsistency and poor relational integrity.
-*   **Cost Volatility**: Inaccurate freight cost forecasting results in budgetary variance and inefficient capital allocation.
-*   **Operational Risk**: The high volume of vendor invoices makes manual auditing for billing discrepancies or suspicious activity physically impossible for human teams.
+## Core Pillars
 
-## Technical Architecture & Implementation
+### 1. High-Integrity Data Architecture
+To move beyond the limitations of static spreadsheets, I implemented a centralized **SQLite-based Relational Database Management System (RDBMS)**.
+*   **Relational Mapping**: Orchestrates complex joins between `Purchases`, `Vendor Invoices`, and `Inventory` tables.
+*   **Data Integrity**: Enforces schema consistency and optimized data retrieval for large-scale logistics datasets.
+*   **Scalability**: Built to handle high-volume transaction ingestion from diverse enterprise sources.
 
-### 1. Relational Data Foundation
-To address the limitations of static CSV files, I implemented a **SQLite-based Relational Database Management System (RDBMS)**. This architectural shift solves several key engineering challenges:
-*   **Data Integrity**: Enforces structured schemas and relationships between purchases, prices, and vendor invoices.
-*   **Query Optimization**: Allows for efficient multi-table joins and aggregation, significantly reducing the overhead of data preprocessing.
-*   **Scalability**: Provides a reliable backend for high-volume data ingestion from various supply chain touchpoints.
+### 2. Predictive Freight Cost Modeling (Regression)
+The system employs a multi-model regression framework to forecast freight expenditures with high precision.
+*   **Modeling Suite**: Evaluation of Linear Regression, Decision Trees, and Random Forest models.
+*   **Performance Metrics**: Models are strictly validated using Mean Absolute Error (MAE) and Root Mean Squared Error (RMSE).
+*   **Automated Selection**: The pipeline automatically identifies and serializes the highest-performing model for downstream production use.
 
-### 2. Predictive Analytics (Phase I: Regression)
-The current implementation utilizes a multi-model regression suite to forecast freight costs based on transaction volume and spend.
-*   **Model Suite**: Linear Regression, Decision Tree, and Random Forest.
-*   **Automated Hyperparameter Selection**: The system evaluates performance via Mean Absolute Error (MAE) and Root Mean Squared Error (RMSE) to select and serialize the optimal model for production deployment.
+### 3. Invoice Risk Intelligence (Classification)
+The system features an automated "Audit-by-Exception" layer to identify high-risk transactions.
+*   **Objective**: Detect billing discrepancies, abnormal freight charges, and delivery delays.
+*   **Technical Approach**: Utilizes supervised learning (Random Forest) to flag invoices requiring manual human review.
+*   **Advanced Feature Engineering**: Incorporates vendor reliability metrics, receiving delays, and pricing deviations to detect anomalous patterns.
 
-### 3. Risk Intelligence (Phase II: Classification) - *Planned*
-The next development cycle introduces a **Risk Classification Engine**.
-*   **Objective**: Automatically identify and flag "high-risk" or anomalous invoices.
-*   **Mechanism**: Uses supervised learning to categorize transactions requiring immediate human intervention, effectively serving as an automated audit layer to prevent financial leakage and fraud.
+## Technical Audits & Continuous Improvement
+The project undergoes rigorous internal audits to ensure professional machine learning standards.
+*   **Data Leakage Prevention**: Ongoing refinement of feature sets to ensure models learn genuine risk patterns rather than simple arithmetic heuristics.
+*   **Robust Preprocessing**: Implementation of `RobustScaler` and log transformations to handle the high variance ($4 to $1.6M+) typical in financial data.
+*   **Statistical Validation**: Use of Hypothesis Testing (T-Tests) to confirm that flagged features show statistically significant differences from normal transactions.
 
-## Future Vision: Financial Intelligence Dashboard
-Beyond predictive modeling, the roadmap includes a comprehensive **Executive Dashboard** powered by advanced Exploratory Data Analysis (EDA). This visual interface will allow stakeholders to:
+## Strategic Roadmap
+- [x] Migration to Relational SQLite Database Architecture.
+- [x] Production-ready Regression Pipeline for Freight Cost Forecasting.
+- [x] Prototyping of Random Forest Classification for Invoice Flagging.
+- [ ] Integration of a BI Dashboard for Executive Financial Visibility.
+- [ ] Refinement of Fraud Detection heuristics using unsupervised learning.
 
-*   **Monitor Spend Distribution**: Visualize expenditure across different vendors, freight categories, and geographic lanes.
-*   **Identify Vendor Performance Trends**: Correlate freight costs against vendor reliability and delivery speed.
-*   **Anomalous Pattern Detection**: View real-time flags for suspicious invoices generated by the classification model.
-*   **Strategic Decision Support**: Use historical trends to negotiate better vendor contracts and optimize shipping routes.
+## Getting Started
 
-## Project Structure
-*   `train.py`: Primary orchestration script for the training and selection pipeline.
-*   `data_preprocessing.py`: Optimized data ingestion and feature engineering module.
-*   `model_evaluation.py`: High-performance evaluation framework for comparative model analysis.
-*   `models/`: Secured directory for production-ready model artifacts.
-
-## Setup & Deployment
-
-### Environment Configuration
-Ensure Python 3.10+ is installed. Dependencies are managed via `requirements.txt`:
+### Installation
+Dependencies are managed via the included virtual environment requirements:
 ```bash
 pip install -r requirements.txt
 ```
 
-### Execution
-Initialize the training pipeline and model selection:
+### Usage
+To initiate the cost prediction training pipeline:
 ```bash
-python train.py
+python Freight_Cost_Prediction/train.py
 ```
 
-## Strategic Roadmap
-- [x] Migration from flat-file CSVs to Relational SQLite Architecture.
-- [x] Implementation of Regression Suite for Freight Cost Prediction.
-- [ ] Development of Binary Classification Model for Risk & Fraud Detection.
-- [ ] Integration of BI Dashboard for EDA and Financial Oversight.
-
 ---
-*Developed by a Senior Software Engineer with a focus on Supply Chain Intelligence and Financial Systems.*
+*Architected for Financial Oversight and Logistics Excellence.*
