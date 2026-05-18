@@ -25,29 +25,46 @@ The system features an automated "Audit-by-Exception" layer to identify high-ris
 
 ## Technical Audits & Continuous Improvement
 The project undergoes rigorous internal audits to ensure professional machine learning standards.
-*   **Data Leakage Prevention**: Ongoing refinement of feature sets to ensure models learn genuine risk patterns rather than simple arithmetic heuristics.
+*   **Data Leakage Prevention**: Refined feature sets to ensure models learn genuine risk patterns rather than simple arithmetic heuristics.
 *   **Robust Preprocessing**: Implementation of `RobustScaler` and log transformations to handle the high variance ($4 to $1.6M+) typical in financial data.
 *   **Statistical Validation**: Use of Hypothesis Testing (T-Tests) to confirm that flagged features show statistically significant differences from normal transactions.
 
 ## Strategic Roadmap
 - [x] Migration to Relational SQLite Database Architecture.
 - [x] Production-ready Regression Pipeline for Freight Cost Forecasting.
-- [x] Prototyping of Random Forest Classification for Invoice Flagging.
+- [x] Development of Random Forest Classification for Invoice Flagging.
+- [x] Technical Audit and Leakage Correction for Classification Models.
 - [ ] Integration of a BI Dashboard for Executive Financial Visibility.
-- [ ] Refinement of Fraud Detection heuristics using unsupervised learning.
 
 ## Getting Started
 
 ### Installation
-Dependencies are managed via the included virtual environment requirements:
+Dependencies are managed via the root requirements file:
 ```bash
 pip install -r requirements.txt
 ```
 
 ### Usage
-To initiate the cost prediction training pipeline:
+The training scripts use relative paths to the database. Ensure you change into the respective directory before execution.
+
+#### 1. Data Ingestion (Initial Setup)
+To ingest raw CSV data into the SQLite database:
 ```bash
-python Freight_Cost_Prediction/train.py
+python Scripts/ingestion_db.py
+```
+
+#### 2. Freight Cost Prediction
+To train and evaluate the regression models:
+```bash
+cd Freight_Cost_Prediction
+python train.py
+```
+
+#### 3. Invoice Risk Flagging
+To train and evaluate the risk classification models:
+```bash
+cd Invoice_Flagging
+python train.py
 ```
 
 ---

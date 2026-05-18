@@ -29,9 +29,8 @@ logs/
 .DS_Store
 Thumbs.db
 
-# NOTE: The 'models/' directory is EXPLICITLY ALLOWED to be tracked 
-# so that pre-trained models can be deployed via GitHub.
-!models/
-!models/*.pkl
-!Freight_Cost_Prediction/models/
-!Freight_Cost_Prediction/models/*.pkl
+# NOTE: The 'models/' directories are EXPLICITLY ALLOWED to be tracked 
+# across all project subdirectories for deployment.
+!**/models/
+!**/models/*.pkl
+!**/models/*.joblib
