@@ -1,0 +1,9 @@
+scikit-learn>=1.4.0
+pandas
+joblib
+numpy
+matplotlib
+seaborn
+scipy
+ipykernel
+notebook
