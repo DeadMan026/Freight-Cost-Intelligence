@@ -1,56 +1,82 @@
 # Invoice Intelligence: Freight Analytics & Risk Mitigation System
 
-An end-to-end ML pipeline for optimizing logistics financial operations through automated freight cost forecasting and intelligent risk assessment.
+An end-to-end ML pipeline for freight cost forecasting and invoice risk flagging using logistics and procurement data stored in SQLite.
 
-## 📌 Table of Contents
-* [Project Overview](#project-overview)
-* [Business Objective](#business-objective)
-* [Data Sources & Architecture](#data-sources--architecture)
-* [EDA & Modeling](#eda--modeling)
-* [Project Structure](#project-structure)
-* [Future Work](#future-work)
+## Table of Contents
+- [Project Overview](#project-overview)
+- [Business Objective](#business-objective)
+- [Data Sources & Architecture](#data-sources--architecture)
+- [EDA & Modeling](#eda--modeling)
+- [Project Structure](#project-structure)
+- [Inference](#inference)
+- [Future Work](#future-work)
 
-## 📖 Project Overview
-This system transforms fragmented supply chain data into actionable intelligence. It automates the detection of billing anomalies and predicts freight expenditures, reducing manual audit overhead and financial leakage.
+## Project Overview
+This project combines two machine learning workflows:
+- freight cost prediction for budgeting and cost analysis
+- invoice risk flagging for identifying potentially abnormal vendor invoices
 
-## 🎯 Business Objective
-* **Cost Prediction:** Accurate forecasting of freight expenses to improve budgeting.
-* **Risk Mitigation:** Automated flagging of high-risk invoices (discrepancies > 0.2%).
-* **Process Efficiency:** Consolidation of disparate data sources into a unified analytical workflow.
+The pipelines are trained from the same consolidated SQLite database built from purchase, invoice, and inventory records.
 
-## 📊 Data Sources & Architecture
-* **Sources:** Purchases, Vendor Invoices, and Inventory datasets.
-* **Database:** SQLite relational schema for managing complex logistics relationships and ensuring data integrity.
-* **Consolidation:** Integrated three disparate sources into a single ingestion pipeline (`ingestion_db.py`).
+## Business Objective
+- **Cost Prediction:** Forecast freight expenses from operational purchase features.
+- **Risk Mitigation:** Flag invoices as risky when they show a material invoice-to-item total mismatch or abnormal receiving delay.
+- **Process Efficiency:** Reduce manual review effort by centralizing data ingestion, feature creation, training, and inference.
 
-## ⚙️ EDA & Modeling
-* **EDA:** Analysis of price distributions ($4 to $1.6M+), vendor reliability, and route-based cost spikes.
-* **Models Used:** 
-    * **Regression:** Random Forest, Decision Trees, Linear Regression (for cost forecasting).
-    * **Classification:** Random Forest (for flagging invoice anomalies).
-    * **Explainability:** SHAP-based feature importance for model transparency.
-* **Evaluation Metrics:** 
-    * **Regression:** MAE, RMSE.
-    * **Classification:** Precision, Recall, F1-Score (optimized for detecting "False Safes").
+## Data Sources & Architecture
+- **Sources:** `purchases`, `vendor_invoice`, and inventory-related CSV inputs.
+- **Database:** SQLite database stored at `data/inventory.db`.
+- **Ingestion:** Source CSVs are loaded into the database through [Scripts/ingestion_db.py](/C:/WORKS/PROJECTS/Invoice_Intelligence/Scripts/ingestion_db.py:1).
 
-## 📂 Project Structure
+## EDA & Modeling
+- **Notebooks:** Exploration and feature validation live in `Notebooks/`.
+- **Freight Cost Modeling:** Training code lives in `Freight_Cost_Prediction/`.
+- **Invoice Flagging:** Training code lives in `Invoice_Flagging/`.
+
+For invoice flagging, the current rule-based target label is:
+- `1` if invoice dollars differ from item-level total dollars by more than `2%`
+- `1` if `avg_receiving_delay > 10`
+- otherwise `0`
+
+The current invoice flagging model is trained on:
+- `invoice_quantity`
+- `invoice_dollars`
+- `Freight`
+- `total_item_quantity`
+- `total_item_dollars`
+- `avg_receiving_delay`
+
+## Project Structure
 ```text
 Invoice_Intelligence/
-├── Freight_Cost_Prediction/   # Regression pipelines (Train/Eval)
-├── Invoice_Flagging/          # Classification pipelines (Train/Eval)
-├── Inference/                 # Production inference scripts
-├── Scripts/                   # Data ingestion & DB management
-├── Notebooks/                 # Exploratory Data Analysis (EDA)
-├── data/                      # SQLite DB & Raw CSV storage
-└── requirements.txt           # Environment dependencies
+|-- Freight_Cost_Prediction/   # Regression training and evaluation
+|-- Invoice_Flagging/          # Classification training and evaluation
+|-- Inference/                 # Inference scripts for trained models
+|-- Scripts/                   # Data ingestion and DB utilities
+|-- Notebooks/                 # EDA and experimentation
+|-- data/                      # SQLite DB and source CSVs
+|-- logs/                      # Ingestion logs
+|-- models/                    # Saved model and scaler artifacts
+|-- README.md
+`-- requirements.txt
 ```
 
-## 🚀 Future Work
-* **Production Inference:** Finalize `inference.py` using `joblib` for real-time single-record and batch CSV processing.
-* **Streamlit Dashboard:** Deploy an interactive UI for:
-    * **Single Scoring:** Form-based entry for immediate predictions.
-    * **Batch Auditing:** CSV upload for bulk risk flagging.
-* **Human-in-the-Loop (HITL):** Implement an audit feedback interface where manual "Gold Labels" are captured to retrain and adapt models to new billing patterns.
+## Inference
+Saved artifacts are stored in the root `models/` folder.
 
----
-*Architected for Financial Oversight and Logistics Excellence.*
+Current inference scripts:
+- [Inference/predict_freight.py](/C:/WORKS/PROJECTS/Invoice_Intelligence/Inference/predict_freight.py:1)
+- [Inference/predict_invoice_flag.py](/C:/WORKS/PROJECTS/Invoice_Intelligence/Inference/predict_invoice_flag.py:1)
+
+The invoice flagging inference script expects these input columns:
+- `invoice_quantity`
+- `invoice_dollars`
+- `Freight`
+- `total_item_quantity`
+- `total_item_dollars`
+- `avg_receiving_delay`
+
+## Future Work
+- Add batch prediction support for CSV-based invoice auditing.
+- Add a simple UI layer for single-record and batch scoring.
+- Capture reviewed outcomes for later retraining and feedback-driven improvement.
