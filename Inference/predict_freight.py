@@ -4,6 +4,7 @@ import pandas as pd
 
 # Path to the model in the root 'models' directory
 MODEL_PATH = Path(__file__).resolve().parent.parent / "models" / "predict_freight_model.pkl"
+FEATURES = ["Dollars"]
 
 def load_model(model_path=MODEL_PATH):
     """load the trained freight cost prediction model"""
@@ -18,8 +19,8 @@ def predict_freight_cost(input_data):
     output : dictpd.DataFrame with preficting freight cost
     """
     model = load_model()
-    input_df = pd.DataFrame(input_data)
-    input_df['Predicted Freight'] = model.predict(input_df).round()
+    input_df = pd.DataFrame(input_data)[FEATURES]
+    input_df["Predicted Freight"] = model.predict(input_df).round()
     return input_df
 
 if __name__ == "__main__":
