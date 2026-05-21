@@ -1,11 +1,14 @@
 import sqlite3
+from pathlib import Path
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import RobustScaler
 import joblib
 
+DB_PATH = Path(__file__).resolve().parent.parent / "data" / "inventory.db"
+
 def load_invoice_data():
-    conn = sqlite3.connect('../data/inventory.db')
+    conn = sqlite3.connect(DB_PATH)
     query = """
     WITH purchase_agg AS (
     SELECT 
@@ -67,5 +70,5 @@ def scale_features(x_train, x_test, scaler_path):
     x_train_scaled = scaler.fit_transform(x_train)
     x_test_scaled = scaler.transform(x_test)
 
-    joblib.dump(scaler,'models/scaler.pkl')
+    joblib.dump(scaler, scaler_path)
     return x_train_scaled, x_test_scaled

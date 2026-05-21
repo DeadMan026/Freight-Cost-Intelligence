@@ -1,71 +1,56 @@
 # Invoice Intelligence: Freight Analytics & Risk Mitigation System
 
-## Project Overview
-This repository hosts a sophisticated Machine Learning and Data Engineering pipeline designed to optimize logistics financial operations. The system transforms raw supply chain data into actionable financial intelligence through automated freight cost prediction and intelligent invoice risk assessment.
+An end-to-end ML pipeline for optimizing logistics financial operations through automated freight cost forecasting and intelligent risk assessment.
 
-## Core Pillars
+## 📌 Table of Contents
+* [Project Overview](#project-overview)
+* [Business Objective](#business-objective)
+* [Data Sources & Architecture](#data-sources--architecture)
+* [EDA & Modeling](#eda--modeling)
+* [Project Structure](#project-structure)
+* [Future Work](#future-work)
 
-### 1. High-Integrity Data Architecture
-To move beyond the limitations of static spreadsheets, I implemented a centralized **SQLite-based Relational Database Management System (RDBMS)**.
-*   **Relational Mapping**: Orchestrates complex joins between `Purchases`, `Vendor Invoices`, and `Inventory` tables.
-*   **Data Integrity**: Enforces schema consistency and optimized data retrieval for large-scale logistics datasets.
-*   **Scalability**: Built to handle high-volume transaction ingestion from diverse enterprise sources.
+## 📖 Project Overview
+This system transforms fragmented supply chain data into actionable intelligence. It automates the detection of billing anomalies and predicts freight expenditures, reducing manual audit overhead and financial leakage.
 
-### 2. Predictive Freight Cost Modeling (Regression)
-The system employs a multi-model regression framework to forecast freight expenditures with high precision.
-*   **Modeling Suite**: Evaluation of Linear Regression, Decision Trees, and Random Forest models.
-*   **Performance Metrics**: Models are strictly validated using Mean Absolute Error (MAE) and Root Mean Squared Error (RMSE).
-*   **Automated Selection**: The pipeline automatically identifies and serializes the highest-performing model for downstream production use.
+## 🎯 Business Objective
+* **Cost Prediction:** Accurate forecasting of freight expenses to improve budgeting.
+* **Risk Mitigation:** Automated flagging of high-risk invoices (discrepancies > 0.2%).
+* **Process Efficiency:** Consolidation of disparate data sources into a unified analytical workflow.
 
-### 3. Invoice Risk Intelligence (Classification)
-The system features an automated "Audit-by-Exception" layer to identify high-risk transactions.
-*   **Objective**: Detect billing discrepancies, abnormal freight charges, and delivery delays.
-*   **Technical Approach**: Utilizes supervised learning (Random Forest) to flag invoices requiring manual human review.
-*   **Advanced Feature Engineering**: Incorporates vendor reliability metrics, receiving delays, and pricing deviations to detect anomalous patterns.
+## 📊 Data Sources & Architecture
+* **Sources:** Purchases, Vendor Invoices, and Inventory datasets.
+* **Database:** SQLite relational schema for managing complex logistics relationships and ensuring data integrity.
+* **Consolidation:** Integrated three disparate sources into a single ingestion pipeline (`ingestion_db.py`).
 
-## Technical Audits & Continuous Improvement
-The project undergoes rigorous internal audits to ensure professional machine learning standards.
-*   **Data Leakage Prevention**: Refined feature sets to ensure models learn genuine risk patterns rather than simple arithmetic heuristics.
-*   **Robust Preprocessing**: Implementation of `RobustScaler` and log transformations to handle the high variance ($4 to $1.6M+) typical in financial data.
-*   **Statistical Validation**: Use of Hypothesis Testing (T-Tests) to confirm that flagged features show statistically significant differences from normal transactions.
+## ⚙️ EDA & Modeling
+* **EDA:** Analysis of price distributions ($4 to $1.6M+), vendor reliability, and route-based cost spikes.
+* **Models Used:** 
+    * **Regression:** Random Forest, Decision Trees, Linear Regression (for cost forecasting).
+    * **Classification:** Random Forest (for flagging invoice anomalies).
+    * **Explainability:** SHAP-based feature importance for model transparency.
+* **Evaluation Metrics:** 
+    * **Regression:** MAE, RMSE.
+    * **Classification:** Precision, Recall, F1-Score (optimized for detecting "False Safes").
 
-## Strategic Roadmap
-- [x] Migration to Relational SQLite Database Architecture.
-- [x] Production-ready Regression Pipeline for Freight Cost Forecasting.
-- [x] Development of Random Forest Classification for Invoice Flagging.
-- [x] Technical Audit and Leakage Correction for Classification Models.
-- [ ] Integration of a BI Dashboard for Executive Financial Visibility.
-
-## Getting Started
-
-### Installation
-Dependencies are managed via the root requirements file:
-```bash
-pip install -r requirements.txt
+## 📂 Project Structure
+```text
+Invoice_Intelligence/
+├── Freight_Cost_Prediction/   # Regression pipelines (Train/Eval)
+├── Invoice_Flagging/          # Classification pipelines (Train/Eval)
+├── Inference/                 # Production inference scripts
+├── Scripts/                   # Data ingestion & DB management
+├── Notebooks/                 # Exploratory Data Analysis (EDA)
+├── data/                      # SQLite DB & Raw CSV storage
+└── requirements.txt           # Environment dependencies
 ```
 
-### Usage
-The training scripts use relative paths to the database. Ensure you change into the respective directory before execution.
-
-#### 1. Data Ingestion (Initial Setup)
-To ingest raw CSV data into the SQLite database:
-```bash
-python Scripts/ingestion_db.py
-```
-
-#### 2. Freight Cost Prediction
-To train and evaluate the regression models:
-```bash
-cd Freight_Cost_Prediction
-python train.py
-```
-
-#### 3. Invoice Risk Flagging
-To train and evaluate the risk classification models:
-```bash
-cd Invoice_Flagging
-python train.py
-```
+## 🚀 Future Work
+* **Production Inference:** Finalize `inference.py` using `joblib` for real-time single-record and batch CSV processing.
+* **Streamlit Dashboard:** Deploy an interactive UI for:
+    * **Single Scoring:** Form-based entry for immediate predictions.
+    * **Batch Auditing:** CSV upload for bulk risk flagging.
+* **Human-in-the-Loop (HITL):** Implement an audit feedback interface where manual "Gold Labels" are captured to retrain and adapt models to new billing patterns.
 
 ---
 *Architected for Financial Oversight and Logistics Excellence.*

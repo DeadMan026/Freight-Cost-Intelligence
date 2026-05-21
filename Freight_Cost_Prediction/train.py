@@ -10,9 +10,11 @@ from model_evaluation import (
 )
 
 def main():
-    db_path = "../data/inventory.db"
-    model_dir = Path("models")
+    # Path to root models directory
+    model_dir = Path(__file__).resolve().parent.parent / "models"
     model_dir.mkdir(exist_ok=True)
+    
+    db_path = "../data/inventory.db"
 
     # Load data
     df = load_vendor_invoice_data(db_path)
