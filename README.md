@@ -1,130 +1,165 @@
-# Vendor Invoice Intelligence System
+# FreightAudit
 
 [![Python](https://img.shields.io/badge/Python-3.9+-blue.svg)](https://www.python.org/)
 [![Streamlit](https://img.shields.io/badge/Streamlit-App-FF4B4B.svg)](https://streamlit.io/)
 [![Scikit-Learn](https://img.shields.io/badge/Scikit--Learn-ML-F7931E.svg)](https://scikit-learn.org/)
 
-An end-to-end machine learning solution designed to streamline finance operations by predicting freight costs and identifying high-risk vendor invoices. This system transforms raw transactional data into actionable insights, reducing manual oversight and preventing financial leakage.
+FreightAudit is a freight cost forecasting and invoice review project built around a small Streamlit application and two supporting machine learning pipelines. It is designed to help review vendor invoices faster by estimating expected freight charges and flagging invoices that may need manual approval.
 
----
+## What the project currently does
 
-## Table of Contents
-- [Project Overview](#project-overview)
-- [Business Objective](#business-objective)
-- [Data Source](#data-source)
-- [EDA & Insights](#eda--insights)
-- [Models Used](#models-used)
-- [Evaluation Metrics](#evaluation-metrics)
-- [Application](#application)
-- [Project Structure](#project-structure)
-- [How to Run This Project](#how-to-run-this-project)
-- [Author and Contact](#author-and-contact)
+- Predicts freight cost from invoice dollar value.
+- Flags invoices for manual approval using quantity, dollar, freight, and receiving-delay features.
+- Supports single-invoice scoring from the Streamlit interface.
+- Supports batch CSV scoring and CSV download from the Streamlit interface.
+- Skips incomplete batch rows instead of failing the whole upload, and marks skipped rows in the exported output.
+- Loads raw CSV files into a SQLite database for training and experimentation.
 
----
+## Application workflow
 
-## Project Overview
-This project addresses two critical challenges in vendor management: accurately forecasting logistics expenses and auditing invoices for anomalies. By leveraging historical purchase and inventory data, the system provides:
-1. **Freight Prediction:** Estimating expected shipping costs based on invoice value.
-2. **Risk Flagging:** A classification engine that detects invoices requiring manual intervention due to abnormal patterns in quantity, cost, or delivery delays.
+The Streamlit app has two main views:
 
-## Business Objective
-*   **Freight Cost Prediction:** Automate the estimation of freight expenses to improve budgeting accuracy and provide a baseline for vendor negotiations.
-*   **Invoice Risk Flagging:** Protect the bottom line by identifying high-risk invoices (e.g., overcharges, unusual quantities, or delivery inconsistencies) before payment processing.
+### 1. Freight Cost Prediction
 
-## Data Source
-The system utilizes a relational **SQLite** database (`inventory.db`) containing integrated data from:
-*   **Purchases & Purchase Prices:** Historical transactional records and unit costs.
-*   **Vendor Invoices:** Direct invoice records including freight and total dollars.
-*   **Inventory (Begin/End):** Contextual data on stock levels to correlate with purchasing patterns.
+The freight module takes `Invoice Dollars` as input and returns an estimated freight amount using the saved regression model.
 
-## EDA & Insights
-Before modeling, I performed extensive Exploratory Data Analysis to understand the underlying drivers of cost:
-*   **Correlation Analysis:** Identified strong linear relationships between invoice value (Dollars) and freight costs.
-*   **Outlier Detection:** Spotted abnormal freight-to-total-dollar ratios that helped define the "Risk Flag" logic.
-*   **Temporal Patterns:** Analyzed receiving delays to identify vendor performance trends.
+### 2. Invoice Manual Approval Flag
 
-## Models Used
-### 1. Regression (Freight Prediction)
-*   **Baseline:** Linear Regression.
-*   **Final Choice:** Linear Regression was selected for its high interpretability and strong performance on the core feature (Invoice Dollars).
+The invoice review module supports:
 
-### 2. Classification (Invoice Flagging)
-*   **Baseline:** Logistic Regression.
-*   **Final Model:** **Random Forest Classifier**.
-*   **Optimization:** Implemented `GridSearchCV` to tune hyperparameters, specifically optimizing for the **F1-Score** to maintain a balance between precision and recall given the class imbalance in risk flagging.
+- single invoice prediction through manual form entry
+- batch invoice prediction through CSV upload
+- downloadable scored CSV output
 
-## Evaluation Metrics
-To ensure reliability, models were evaluated using the following metrics:
-*   **Regression:** 
-    *   **MAE (Mean Absolute Error):** To understand the average dollar deviation.
-    *   **RMSE (Root Mean Squared Error):** To penalize larger forecasting errors.
-    *   **R-Squared:** Measuring the variance captured by the model.
-*   **Classification:**
-    *   **F1-Score:** The primary metric for risk detection.
-    *   **Precision & Recall:** To minimize false positives while ensuring high-risk invoices aren't missed.
-    *   **Accuracy:** Overall prediction correctness.
+For batch prediction, the uploaded CSV must contain these columns:
 
-## Application
-The system is deployed as an interactive **Streamlit** web portal. It allows finance teams to:
-*   Input invoice details manually for real-time scoring.
-*   View instant risk assessments (Safe vs. Manual Approval Required).
-*   Get quick freight estimates for cost verification.
-
----
-
-## Project Structure
 ```text
-.
-├── app.py                      # Streamlit Web Application
-├── data/                       # Database and raw CSV storage
-├── models/                     # Saved Pickle files (Models & Scalers)
-├── Notebooks/                  # Detailed EDA and Experimentation
-├── Freight_Cost_Prediction/    # Regression Training Pipeline
-│   ├── data_preprocessing.py
-│   ├── model_evaluation.py
-│   └── train.py
-├── Invoice_Flagging/           # Classification Training Pipeline
-│   ├── data_preprocessing.py
-│   ├── modeling_evaluation.py
-│   └── train.py
-├── Inference/                  # Core Prediction Logic for App
-│   ├── predict_freight.py
-│   └── predict_invoice_flag.py
-└── Scripts/                    # Data Ingestion & DB Scripts
-    └── ingestion_db.py
+invoice_quantity
+invoice_dollars
+Freight
+total_item_quantity
+total_item_dollars
+avg_receiving_delay
 ```
 
----
+If any of these columns are missing entirely, the app stops and reports the missing columns. If the columns exist but some rows have missing values, the app scores the valid rows and marks the incomplete ones as skipped.
 
-## How to Run This Project
-1.  **Clone the Repository:**
-    ```bash
-    git clone <your-repository-url>
-    cd Invoice_Intelligence
-    ```
-2.  **Install Dependencies:**
-    ```bash
-    pip install -r requirements.txt
-    ```
-3.  **Setup Data:**
-    ```bash
-    python Scripts/ingestion_db.py
-    ```
-4.  **Train Models (Optional - pre-trained models are in /models):**
-    ```bash
-    python Freight_Cost_Prediction/train.py
-    python Invoice_Flagging/train.py
-    ```
-5.  **Launch the App:**
-    ```bash
-    streamlit run app.py
-    ```
+A sample file is included at `sample_invoice.csv`.
 
----
+## Data source
 
-## Author and Contact
-**Souvik Sinha**
-*   **GitHub:** [DeadMan026](https://github.com/DeadMan026)
-*   **Email:** 27souviksinha@gmail.com
+Training data is loaded into `data/inventory.db` from CSV files under `data/CSVs/`.
 
-*(Feel free to reach out for collaboration or inquiries!)*
+The current implementation uses:
+
+- `vendor_invoice` for freight regression
+- `vendor_invoice` joined with aggregated `purchases` data for invoice flagging
+
+The SQLite database also contains inventory tables that were loaded during ingestion, although they are not currently used as model features in the app.
+
+## Modeling approach
+
+### Freight prediction
+
+The freight training pipeline compares:
+
+- Linear Regression
+- Decision Tree Regressor
+- Random Forest Regressor
+
+The pipeline evaluates the models on MAE, RMSE, and R-squared, then saves the model with the lowest MAE to `models/predict_freight_model.pkl`.
+
+### Invoice flagging
+
+The invoice flagging pipeline:
+
+- builds training features from invoice and purchase data
+- creates a risk label using business rules
+- scales numeric inputs with `RobustScaler`
+- tunes a `RandomForestClassifier` with `GridSearchCV`
+- saves the trained model to `models/predict_flag_invoice.pkl`
+
+The current rule-based target marks an invoice as risky when:
+
+- invoice dollars differ from total item dollars by more than 2%
+- average receiving delay is greater than 10 days
+
+## Project structure
+
+```text
+.
+|-- app.py
+|-- sample_invoice.csv
+|-- README.md
+|-- requirements.txt
+|-- data/
+|   |-- CSVs/
+|   `-- inventory.db
+|-- models/
+|   |-- predict_freight_model.pkl
+|   |-- predict_flag_invoice.pkl
+|   `-- scaler.pkl
+|-- Freight_Cost_Prediction/
+|   |-- data_preprocessing.py
+|   |-- model_evaluation.py
+|   `-- train.py
+|-- Invoice_Flagging/
+|   |-- data_preprocessing.py
+|   |-- modeling_evaluation.py
+|   `-- train.py
+|-- Inference/
+|   |-- predict_freight.py
+|   `-- predict_invoice_flag.py
+|-- Scripts/
+|   `-- ingestion_db.py
+`-- Notebooks/
+    |-- Predicting Freight Cost.ipynb
+    `-- Invoice Flagging.ipynb
+```
+
+## How to run
+
+1. Clone the repository.
+
+```bash
+git clone <your-repository-url>
+cd Invoice_Intelligence
+```
+
+2. Install dependencies.
+
+```bash
+pip install -r requirements.txt
+```
+
+3. Load the raw CSV files into SQLite.
+
+```bash
+python Scripts/ingestion_db.py
+```
+
+4. Train the models if needed.
+
+```bash
+python Freight_Cost_Prediction/train.py
+python Invoice_Flagging/train.py
+```
+
+Pretrained model files are already present in `models/`.
+
+5. Start the Streamlit app.
+
+```bash
+streamlit run app.py
+```
+
+## Notes
+
+- `sample_invoice.csv` can be used to test the batch upload flow.
+- The current app focuses on prediction and batch scoring. Reviewer feedback capture and model explainability are not implemented yet.
+
+## Author
+
+Souvik Sinha  
+GitHub: [DeadMan026](https://github.com/DeadMan026)  
+Email: 27souviksinha@gmail.com

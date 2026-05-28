@@ -21,7 +21,7 @@ st.set_page_config(
 
 st.markdown("""
 # 📊 Vendor Invoice Intelligence Portal
-### AI-Driven Freight Cost Prediction & Invoice Risk Flagging
+### Freight Cost Prediction & Invoice Risk Flagging
 
 This internal analytics portal leverages machine learning to:
 - **Forecast freight costs accurately**
@@ -98,6 +98,10 @@ else:
     based on abnormal cost, freight, or delivery patterns.
     """)
 
+    st.markdown("""
+        ### 💫 Single Invoice Prediction
+    """)
+
     with st.form("invoice_flag_form"):
         col1, col2, col3 = st.columns(3)
 
@@ -160,3 +164,69 @@ else:
                 st.error("🚨 Invoice requires **MANUAL APPROVAL**")
             else:
                 st.success("✅ Invoice is **SAFE for Auto-Approval**")
+
+    st.divider()
+    st.markdown("""
+    ### ⚡Batch Invoice Prediction
+                
+    Upload a CSV of multiple invoices and score them all at once for risk.
+    Then download the scored CSV with predicted flags for quick review and action.
+    """)
+    
+    uploaded_file = st.file_uploader(
+        "Upload Invoice CSV",
+        type = ["csv"]
+    )
+
+    if uploaded_file is not None:
+        batch_df = pd.read_csv(uploaded_file)
+
+        required_columns = [
+            "invoice_quantity",
+            "invoice_dollars",
+            "Freight",
+            "total_item_quantity",
+            "total_item_dollars",
+            "avg_receiving_delay"
+        ]
+
+        missing_columns = [col for col in required_columns if col not in batch_df.columns]
+
+        if missing_columns:
+            st.error(f"Missing required Columns: {missing_columns}")
+        else:
+            # identifying rows that have all required values
+            valid_index = batch_df[required_columns].dropna().index
+
+            if not valid_index.empty:
+
+                predictions_df = predict_invoice_flag(batch_df.loc[valid_index])
+
+                # mapping predictons back to original df
+                batch_df.loc[valid_index, "Predicted Flag"] = predictions_df["Predicted Flag"].map({
+                    1.0: "Manual approval",
+                    0.0: "Safe"
+                })
+
+            # adding status labels and count results
+            batch_df["Prediction Status"] = "Skipped (Missing Data)"
+            batch_df.loc[valid_index, "Prediction Status"] = "Scored"
+
+            scored_count = len(valid_index)
+            skipped_count = len(batch_df) - scored_count
+
+            if scored_count > 0:
+                st.success(f"Scored {scored_count} rows successfully.")
+            if skipped_count > 0:
+                st.warning(f"Skipped {skipped_count} rows due to missing fields.")
+
+            st.dataframe(batch_df)
+
+            csv_output = batch_df.to_csv(index =False).encode("utf-8")
+
+            st.download_button(
+                label="Download Scored CSV",
+                data = csv_output,
+                file_name = "FreightAudit_scored_invoices.csv",
+                mime="text/csv"
+            )
