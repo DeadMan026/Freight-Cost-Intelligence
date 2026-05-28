@@ -10,9 +10,9 @@ from Inference.predict_invoice_flag import predict_invoice_flag
 # --------------------------------------
 
 st.set_page_config(
-    page_title = ' Vendor Invoice Intelligence Portal',
-    page_icon = '📊',
-    layout = "wide"
+    page_title=' Vendor Invoice Intelligence Portal',
+    page_icon='📊',
+    layout="wide"
 )
 
 # ---------------------------------------
@@ -20,13 +20,13 @@ st.set_page_config(
 # ---------------------------------------
 
 st.markdown("""
-# 📊 Vendor Invoice Intelligence Portal
+# Vendor Invoice Intelligence Portal
 ### Freight Cost Prediction & Invoice Risk Flagging
 
 This internal analytics portal leverages machine learning to:
 - **Forecast freight costs accurately**
 - **Detect risky or abnormal vendor invoices**
-- **Reduce financial leakage and manual workload**  
+- **Reduce financial leakage and manual workload**
 """)
 
 st.divider()
@@ -34,7 +34,7 @@ st.divider()
 # ----------------------------------------
 # SIDEBAR
 # ----------------------------------------
-st.sidebar.title("🔍 Model Selection")
+st.sidebar.title("Model Selection")
 selected_model = st.sidebar.radio(
     "Choose prediction module",
     [
@@ -46,19 +46,19 @@ selected_model = st.sidebar.radio(
 st.sidebar.markdown("""
 ## Business Impact
 
-- 📉 Improved cost forecasting
-- 🚨 Reduced invoice fraud & anomalies
-- ⚙️ Faster finance operations
+- Improved cost forecasting
+- Reduced invoice fraud and anomalies
+- Faster finance operations
 """)
 
 # ----------------------------------------
 # FREIGHT COST PREDICTION
 # ----------------------------------------
 if selected_model == "Freight Cost Prediction":
-    st.subheader("📦 Freight Cost Prediction")
+    st.subheader("Freight Cost Prediction")
 
     st.markdown("""
-    **Objective:**  
+    **Objective:**
     Predict freight cost for a vendor invoice using **Invoice Dollars**
     to support budgeting, forecasting, and vendor negotiations.
     """)
@@ -66,40 +66,40 @@ if selected_model == "Freight Cost Prediction":
     with st.form("freight form"):
         dollars = st.number_input(
             "Invoice Dollars",
-            min_value = 1.0,
-            value = 20000.0
+            min_value=1.0,
+            value=20000.0
         )
 
-        submit_freight = st.form_submit_button("📦 Predict Freight Cost")
+        submit_freight = st.form_submit_button("Predict Freight Cost")
 
         if submit_freight:
             input_data = {
-                "Dollars" : [dollars]
+                "Dollars": [dollars]
             }
 
             prediction = predict_freight_cost(input_data)["Predicted Freight"]
-            st.success("Prediction completed Successfully")
+            st.success("Prediction completed successfully")
 
             st.metric(
-                label = "Estimated Freight Cost",
-                value = f"{prediction[0]:,.2f}"
-            ) 
+                label="Estimated Freight Cost",
+                value=f"{prediction[0]:,.2f}"
+            )
 
 # --------------------------------------------------------
 # Invoice Flag Prediction
 # --------------------------------------------------------
 
 else:
-    st.subheader("🚨 Invoice Manual Approval Prediction")
+    st.subheader("Invoice Manual Approval Prediction")
 
     st.markdown("""
-    **Objective:**  
+    **Objective:**
     Predict whether a vendor invoice should be **flagged for manual approval**
     based on abnormal cost, freight, or delivery patterns.
     """)
 
     st.markdown("""
-        ### 💫 Single Invoice Prediction
+    ### Single Invoice Prediction
     """)
 
     with st.form("invoice_flag_form"):
@@ -108,10 +108,10 @@ else:
         with col1:
             invoice_quantity = st.number_input(
                 "Invoice Quantity",
-                min_value = 1,
-                value = 50
+                min_value=1,
+                value=50
             )
-            
+
             freight = st.number_input(
                 "Freight Cost",
                 min_value=0.0,
@@ -143,8 +143,8 @@ else:
                 min_value=0.0,
                 value=9.0
             )
-        
-        submit_flag = st.form_submit_button("🧠 Evaluate Invoice Risk")
+
+        submit_flag = st.form_submit_button("Evaluate Invoice Risk")
 
         if submit_flag:
             input_data = {
@@ -161,21 +161,21 @@ else:
             is_flagged = bool(flag_prediction[0])
 
             if is_flagged:
-                st.error("🚨 Invoice requires **MANUAL APPROVAL**")
+                st.error("Invoice requires **manual approval**")
             else:
-                st.success("✅ Invoice is **SAFE for Auto-Approval**")
+                st.success("Invoice is **safe for auto-approval**")
 
     st.divider()
     st.markdown("""
-    ### ⚡Batch Invoice Prediction
-                
+    ### Batch Invoice Prediction
+
     Upload a CSV of multiple invoices and score them all at once for risk.
     Then download the scored CSV with predicted flags for quick review and action.
     """)
-    
+
     uploaded_file = st.file_uploader(
         "Upload Invoice CSV",
-        type = ["csv"]
+        type=["csv"]
     )
 
     if uploaded_file is not None:
@@ -199,10 +199,9 @@ else:
             valid_index = batch_df[required_columns].dropna().index
 
             if not valid_index.empty:
-
                 predictions_df = predict_invoice_flag(batch_df.loc[valid_index])
 
-                # mapping predictons back to original df
+                # mapping predictions back to original df
                 batch_df.loc[valid_index, "Predicted Flag"] = predictions_df["Predicted Flag"].map({
                     1.0: "Manual approval",
                     0.0: "Safe"
@@ -222,11 +221,11 @@ else:
 
             st.dataframe(batch_df)
 
-            csv_output = batch_df.to_csv(index =False).encode("utf-8")
+            csv_output = batch_df.to_csv(index=False).encode("utf-8")
 
             st.download_button(
                 label="Download Scored CSV",
-                data = csv_output,
-                file_name = "FreightAudit_scored_invoices.csv",
+                data=csv_output,
+                file_name="FreightAudit_scored_invoices.csv",
                 mime="text/csv"
             )
