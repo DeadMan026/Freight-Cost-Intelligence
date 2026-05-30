@@ -10,26 +10,28 @@ FreightAudit is a freight cost forecasting and invoice review project built arou
 
 - Predicts freight cost from invoice dollar value.
 - Flags invoices for manual approval using quantity, dollar, freight, and receiving-delay features.
-- Supports single-invoice scoring from the Streamlit interface.
+- Outputs a **Probability Risk Score (%)** instead of a simple binary flag.
+- Provides **Model Transparency via SHAP**, rendering feature-importance charts for single invoices.
+- Features a **Human-in-the-Loop (HITL) foundation**, allowing auditors to confirm or correct predictions via the UI, saving feedback to a SQLite database.
 - Supports batch CSV scoring and CSV download from the Streamlit interface.
 - Skips incomplete batch rows instead of failing the whole upload, and marks skipped rows in the exported output.
 - Loads raw CSV files into a SQLite database for training and experimentation.
 
 ## Application workflow
 
-The Streamlit app has two main views:
+The Streamlit app has three main views:
 
 ### 1. Freight Cost Prediction
-
 The freight module takes `Invoice Dollars` as input and returns an estimated freight amount using the saved regression model.
 
 ### 2. Invoice Manual Approval Flag
-
 The invoice review module supports:
+- single invoice prediction with detailed discrepancy reasons and SHAP visualization.
+- HITL feedback buttons to capture the auditor's final decision.
+- batch invoice prediction through CSV upload and downloadable scored CSV output.
 
-- single invoice prediction through manual form entry
-- batch invoice prediction through CSV upload
-- downloadable scored CSV output
+### 3. Auditor Review History
+A dashboard tracking the recent decisions made by human auditors. This data is stored in the `auditor_feedback` table and acts as the ground-truth dataset for future model retraining.
 
 For batch prediction, the uploaded CSV must contain these columns:
 
@@ -46,38 +48,47 @@ If any of these columns are missing entirely, the app stops and reports the miss
 
 A sample file is included at `sample_invoice.csv`.
 
+## Modeling approach
+
+### Freight prediction (Regression)
+
+The freight training pipeline compares:
+- **Linear Regression**
+- **Decision Tree Regressor**
+- **Random Forest Regressor**
+
+Models are evaluated on:
+- **MAE (Mean Absolute Error)**: Measures the average magnitude of prediction errors.
+- **RMSE (Root Mean Squared Error)**: Penalizes larger errors more heavily.
+- **R² (R-squared)**: Represents the percentage of variance explained by the model.
+
+The pipeline saves the model with the lowest MAE to `models/predict_freight_model.pkl`.
+
+### Invoice flagging (Classification)
+
+The invoice flagging pipeline:
+- builds training features from invoice and purchase data.
+- creates a risk label using business rules.
+- scales numeric inputs with `RobustScaler`.
+- tunes a **Random Forest Classifier** using `GridSearchCV` optimized for **F1-score**.
+
+Performance metrics captured include:
+- **Accuracy**: Overall correctness of the model.
+- **Precision**: Ability to correctly identify risky invoices without false alarms.
+- **Recall**: Ability to catch all risky invoices.
+- **F1-Score**: The harmonic mean of precision and recall (primary optimization target).
+
+The trained model is saved to `models/predict_flag_invoice.pkl`.
+
 ## Data source
 
 Training data is loaded into `data/inventory.db` from CSV files under `data/CSVs/`.
 
+*Note: The raw CSV datasets for this project will be provided via a Google Drive link upon request/later stage.*
+
 The current implementation uses:
-
-- `vendor_invoice` for freight regression
-- `vendor_invoice` joined with aggregated `purchases` data for invoice flagging
-
-The SQLite database also contains inventory tables that were loaded during ingestion, although they are not currently used as model features in the app.
-
-## Modeling approach
-
-### Freight prediction
-
-The freight training pipeline compares:
-
-- Linear Regression
-- Decision Tree Regressor
-- Random Forest Regressor
-
-The pipeline evaluates the models on MAE, RMSE, and R-squared, then saves the model with the lowest MAE to `models/predict_freight_model.pkl`.
-
-### Invoice flagging
-
-The invoice flagging pipeline:
-
-- builds training features from invoice and purchase data
-- creates a risk label using business rules
-- scales numeric inputs with `RobustScaler`
-- tunes a `RandomForestClassifier` with `GridSearchCV`
-- saves the trained model to `models/predict_flag_invoice.pkl`
+- `vendor_invoice` for freight regression.
+- `vendor_invoice` joined with aggregated `purchases` data for invoice flagging.
 
 The current rule-based target marks an invoice as risky when:
 

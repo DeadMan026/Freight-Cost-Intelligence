@@ -8,3 +8,4 @@ scipy
 ipykernel
 notebook
 sqlalchemy
+shap

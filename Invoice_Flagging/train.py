@@ -19,11 +19,10 @@ def main():
     model_dir = Path(__file__).resolve().parent.parent / "models"
     model_dir.mkdir(exist_ok=True)
 
-    #load data
     df = load_invoice_data()
     df = apply_labels(df)
 
-    # apply labels
+
     x_train, x_test, y_train, y_test = split_data(df, FEATURES, TARGET)
     
     scaler_path = model_dir / 'scaler.pkl'
@@ -31,7 +30,6 @@ def main():
         x_train, x_test, str(scaler_path)
     ) 
 
-    # train and evaluate models
     grid_search = train_random_forest(x_train_scaled, y_train)
     evaluate_classifier(
         grid_search.best_estimator_,
@@ -43,6 +41,12 @@ def main():
     # save best model
     model_path = model_dir / 'predict_flag_invoice.pkl'
     joblib.dump(grid_search.best_estimator_, model_path)
+    
+    # Save a sample of training data for SHAP background
+  
+    shap_bg_path = model_dir / 'shap_background.pkl'
+    joblib.dump(x_train_scaled[:100], shap_bg_path)
+    print(f"SHAP background data saved to {shap_bg_path}")
 
 if __name__ == "__main__":
     main()
