@@ -3,17 +3,32 @@ import numpy as np
 import pandas as pd
 import sqlite3
 from datetime import datetime
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
 from Inference.predict_freight import predict_freight_cost
 from Inference.predict_invoice_flag import predict_invoice_flag
 
-def save_feedback(po_number, prediction, decision, comments=""):
+def save_feedback(features, decision, po_number):
     try:
         conn = sqlite3.connect('data/inventory.db')
+        timestamp = datetime.now().isoformat()
         conn.execute(
-            "INSERT INTO auditor_feedback (PONumber, prediction, auditor_decision, comments) VALUES (?, ?, ?, ?)",
-            (po_number, int(prediction), int(decision), comments)
+            """INSERT INTO auditor_feedback 
+               (PONumber, timestamp, invoice_quantity, invoice_dollars, Freight, total_item_quantity, total_item_dollars, avg_receiving_delay, auditor_decision) 
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            (
+                po_number,
+                timestamp,
+                features['invoice_quantity'][0],
+                features['invoice_dollars'][0],
+                features['Freight'][0],
+                features['total_item_quantity'][0],
+                features['total_item_dollars'][0],
+                features['avg_receiving_delay'][0],
+                int(decision)
+            )
         )
         conn.commit()
         conn.close()
@@ -55,7 +70,8 @@ selected_model = st.sidebar.radio(
     [
         "Freight Cost Prediction",
         "Invoice Manual Approval Flag",
-        "Auditor Review History"
+        "Auditor Review History",
+        "Model Operations"
     ]
 )
 
@@ -115,6 +131,7 @@ elif selected_model == "Invoice Manual Approval Flag":
     with st.form("invoice_flag_form"):
         col1, col2, col3 = st.columns(3)
         with col1:
+            po_number = st.text_input("PO Number", value="PO-1001")
             invoice_quantity = st.number_input("Invoice Quantity", min_value=1, value=50)
             freight = st.number_input("Freight Cost", min_value=0.0, value=1.73)
         with col2:
@@ -128,6 +145,7 @@ elif selected_model == "Invoice Manual Approval Flag":
 
         if submit_flag:
             input_data = {
+                "PONumber": po_number,
                 "invoice_quantity": [invoice_quantity],
                 "invoice_dollars": [invoice_dollars],
                 "Freight": [freight],
@@ -146,7 +164,8 @@ elif selected_model == "Invoice Manual Approval Flag":
                 'prediction': int(is_flagged),
                 'risk_score': risk_score,
                 'reason': reason_text,
-                'shap_values': shap_vals
+                'shap_values': shap_vals,
+                'features': input_data
             }
 
     if 'last_prediction' in st.session_state:
@@ -173,17 +192,18 @@ elif selected_model == "Invoice Manual Approval Flag":
                 ax.set_xlabel("Impact on Risk Score")
                 ax.set_title("How each feature pushed the risk score up/down")
                 st.pyplot(fig)
+                plt.close(fig)
 
         st.markdown("#### Auditor Feedback (HITL)")
         col_fb1, col_fb2 = st.columns([1, 1])
         with col_fb1:
             if st.button("✅ Confirm Correct", use_container_width=True):
-                if save_feedback("MANUAL_ENTRY", pred_data['prediction'], pred_data['prediction']):
+                if save_feedback(pred_data['features'], pred_data['prediction'], pred_data['features']['PONumber']):
                     st.toast("Feedback saved!", icon="🚀")
         with col_fb2:
             if st.button("❌ Mark as Error", use_container_width=True):
                 corrected = 1 - pred_data['prediction']
-                if save_feedback("MANUAL_ENTRY", pred_data['prediction'], corrected):
+                if save_feedback(pred_data['features'], corrected, pred_data['features']['PONumber']):
                     st.toast("Correction saved!", icon="🛠️")
 
     st.divider()
@@ -224,3 +244,47 @@ elif selected_model == "Auditor Review History":
         st.dataframe(history_df, use_container_width=True)
     else:
         st.warning("No feedback history found.")
+
+elif selected_model == "Model Operations":
+    st.subheader("MLOps: Continuous Model Improvement")
+    
+    # query feedback volume
+    try:
+        conn = sqlite3.connect('data/inventory.db')
+        count_df = pd.read_sql_query("SELECT COUNT(*) as count FROM auditor_feedback", conn)
+        conn.close()
+        feedback_count = count_df['count'].iloc[0]
+    except:
+        feedback_count = 0
+        
+    st.metric("Human-Verified Samples Collected", feedback_count)
+    
+    st.markdown("""
+    **Retraining Strategy:**
+    - Merges original rule-based data with human feedback.
+    - **Human Priority:** Auditor decisions override rules and carry **5x more weight**.
+    - **Versioning:** Current model is backed up before being updated.
+    """)
+    
+    if st.button("🚀 Trigger Model Retraining", use_container_width=True):
+        if feedback_count < 5:
+            st.warning("Recommended: Collect at least 5-10 human samples before retraining for better results.")
+        
+        with st.spinner("Retraining Random Forest model with weighted feedback..."):
+            try:
+                import subprocess
+                import sys
+                # trigger training script
+                result = subprocess.run(
+                    [sys.executable, "Invoice_Flagging/train.py"], 
+                    capture_output=True, 
+                    text=True,
+                    check=True
+                )
+                st.success("Model retrained successfully!")
+                st.info("The dashboard is now using the updated model with your feedback incorporated.")
+                # logs output
+                with st.expander("Training Logs"):
+                    st.code(result.stdout)
+            except Exception as e:
+                st.error(f"Retraining failed: {e}")

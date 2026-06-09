@@ -1,7 +1,6 @@
 from pathlib import Path
 import joblib
 import pandas as pd
-import shap
 import numpy as np
 
 MODEL_PATH = Path(__file__).resolve().parent.parent / "models" / "predict_flag_invoice.pkl"
@@ -43,6 +42,7 @@ def predict_invoice_flag(input_data,delay_threshold = 10.0):
     
     input_df = pd.DataFrame(input_data)[FEATURES]
     scaled_input_df = scaler.transform(input_df)
+    scaled_input_df = pd.DataFrame(scaled_input_df, columns=FEATURES)
     
     # Get binary prediction
     input_df['Predicted Flag'] = model.predict(scaled_input_df).round()
@@ -56,21 +56,36 @@ def predict_invoice_flag(input_data,delay_threshold = 10.0):
 
     # SHAP calculation for the first row (for single prediction UI)
     try:
+        import shap
         bg_data = load_shap_background()
         explainer = shap.TreeExplainer(model, bg_data)
         shap_values = explainer.shap_values(scaled_input_df)
-        # For RF in shap, it might return a list [neg_class_shap, pos_class_shap] or just pos_class_shap
+
+        def _to_object_col(arrays):
+            """Wrap a list of arrays into a 1-D object-dtype array so pandas
+            stores it as a column of arrays rather than trying to broadcast."""
+            col = np.empty(len(arrays), dtype=object)
+            for i, arr in enumerate(arrays):
+                col[i] = arr
+            return col
+
         if isinstance(shap_values, list):
-            input_df['shap_values'] = [shap_values[1][i] for i in range(len(input_df))]
+            # Classic RF: shap_values is [neg_class, pos_class]
+            input_df['shap_values'] = _to_object_col(
+                [shap_values[1][i] for i in range(len(input_df))]
+            )
         else:
-            # handle case where shap_values is a single array (e.g. for some model types or older shap versions)
-            if len(shap_values.shape) == 3: # (num_samples, num_features, num_classes)
-                input_df['shap_values'] = [shap_values[i, :, 1] for i in range(len(input_df))]
-            else:
-                input_df['shap_values'] = [shap_values[i] for i in range(len(input_df))]
+            if len(shap_values.shape) == 3:  # (samples, features, classes)
+                input_df['shap_values'] = _to_object_col(
+                    [shap_values[i, :, 1] for i in range(len(input_df))]
+                )
+            else:                             # (samples, features)
+                input_df['shap_values'] = _to_object_col(
+                    [shap_values[i] for i in range(len(input_df))]
+                )
     except Exception as e:
         print(f"SHAP Error: {e}")
-        input_df['shap_values'] = [None] * len(input_df)
+        input_df['shap_values'] = np.empty(len(input_df), dtype=object)
 
     # Calculating explicit discrepancy reasons
     input_df['dollar_mismatch_pct'] = abs(input_df['invoice_dollars'] -input_df['total_item_dollars']) / input_df['total_item_dollars']

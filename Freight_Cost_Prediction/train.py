@@ -14,10 +14,10 @@ def main():
     model_dir = Path(__file__).resolve().parent.parent / "models"
     model_dir.mkdir(exist_ok=True)
     
-    db_path = "../data/inventory.db"
+    db_path = Path(__file__).resolve().parent.parent / "data" / "inventory.db"
 
     # Load data
-    df = load_vendor_invoice_data(db_path)
+    df = load_vendor_invoice_data(str(db_path))
 
     # prepare data
     x, y = prepare_features(df)
