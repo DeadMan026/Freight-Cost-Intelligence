@@ -3,6 +3,16 @@ from pathlib import Path
 from data_preprocessing import load_invoice_data, split_data, scale_features
 from modeling_evaluation import train_random_forest, evaluate_classifier
 import joblib
+import sys
+import os
+import logging
+
+# Ensure root is in path
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from data_validation import run_validation_flow
+
+# Setup logging
+logger = logging.getLogger(__name__)
 
 FEATURES = [
     "invoice_quantity",
@@ -32,6 +42,18 @@ def main():
 
     # data ingestion and splitting with weights
     df = load_invoice_data()
+    
+    # Run Validation before training
+    try:
+        logger.info("Running data validation on training set...")
+        valid = run_validation_flow(df[FEATURES])
+        if not valid:
+            logger.warning("Training data failed validation checks. Results may be unreliable.")
+        else:
+            logger.info("Training data passed validation.")
+    except Exception as e:
+        logger.error(f"Validation failed during training: {e}")
+
     x_train, x_test, y_train, y_test, w_train, w_test = split_data(df, FEATURES, TARGET)
     
     # scaling features

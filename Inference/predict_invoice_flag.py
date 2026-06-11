@@ -2,6 +2,16 @@ from pathlib import Path
 import joblib
 import pandas as pd
 import numpy as np
+import logging
+import sys
+import os
+
+# Ensure root is in path for data_validation import
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from data_validation import run_validation_flow
+
+# Setup local logger
+logger = logging.getLogger(__name__)
 
 MODEL_PATH = Path(__file__).resolve().parent.parent / "models" / "predict_flag_invoice.pkl"
 SCALER_PATH = Path(__file__).resolve().parent.parent / "models" / "scaler.pkl"
@@ -41,9 +51,26 @@ def predict_invoice_flag(input_data,delay_threshold = 10.0):
     scaler = load_scaler()
     
     input_df = pd.DataFrame(input_data)[FEATURES]
-    scaled_input_df = scaler.transform(input_df)
-    scaled_input_df = pd.DataFrame(scaled_input_df, columns=FEATURES)
     
+    # Run Validation
+    try:
+        # We don't block the pipeline even if validation fails, 
+        # but we log it for the auditor/developer to see.
+        valid = run_validation_flow(input_df)
+        if not valid:
+            logger.warning("Input data failed validation checks. Proceeding with caution.")
+    except Exception as e:
+        logger.error(f"Validation component encountered an error: {e}")
+
+    scaled_input_df_raw = scaler.transform(input_df)
+    scaled_input_df = pd.DataFrame(scaled_input_df_raw, columns=FEATURES)
+    
+    # Optional: Validate scaled data to detect drift/extreme outliers
+    try:
+        run_validation_flow(input_df, scaled_input_df)
+    except:
+        pass
+
     # Get binary prediction
     input_df['Predicted Flag'] = model.predict(scaled_input_df).round()
     

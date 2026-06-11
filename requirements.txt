@@ -9,3 +9,4 @@ ipykernel
 notebook
 sqlalchemy
 shap
+great-expectations
