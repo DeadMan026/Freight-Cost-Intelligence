@@ -1,4 +1,4 @@
-# Vendor Invoice Intelligence Portal
+# FreightAudit — Freight Analytics & Risk Mitigation System
 
 [![Python](https://img.shields.io/badge/Python-3.9+-blue.svg)](https://www.python.org/)
 [![Streamlit](https://img.shields.io/badge/Streamlit-App-FF4B4B.svg)](https://streamlit.io/)
